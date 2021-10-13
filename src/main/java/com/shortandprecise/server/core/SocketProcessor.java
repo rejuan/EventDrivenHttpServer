@@ -27,7 +27,7 @@ public class SocketProcessor implements Runnable {
 				if(Objects.nonNull(socketChannel)) {
 					socketChannel.configureBlocking(false);
 					SelectionKey selectionKey = socketChannel.register(selector, SelectionKey.OP_READ);
-					Data data = new Data(socketChannel, selector, selectionKey);
+					RequestProcessor data = new RequestProcessor(socketChannel, selector, selectionKey);
 					selectionKey.attach(data);
 				}
 
@@ -40,13 +40,16 @@ public class SocketProcessor implements Runnable {
 				selectionKeys.forEach(selectionKey -> {
 					if (selectionKey.isValid()) {
 						int interest = selectionKey.interestOps();
-						Data data = (Data) selectionKey.attachment();
+						NetworkEvent networkEvent = (NetworkEvent) selectionKey.attachment();
 						switch (interest) {
 							case SelectionKey.OP_READ:
-								data.read();
+								networkEvent.read();
 								break;
 							case SelectionKey.OP_WRITE:
-								data.write();
+								networkEvent.write();
+								break;
+							case SelectionKey.OP_CONNECT:
+								networkEvent.connect(selectionKey);
 								break;
 							default:
 								break;
